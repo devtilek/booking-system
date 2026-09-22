@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#F8D7E1">
+    <title>Aliya Nails — Маникюр</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+
+    <!-- PWA -->
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Aliya Nails">
+    <link rel="icon" type="image/png" href="/icons/icon-192.png">
+</head>
+<body>
+
+<header class="hero">
+    <nav>
+        <div class="logo">Aliya<span>Nails</span></div>
+        <button class="burger" id="burger" aria-label="Меню">
+            <span></span><span></span><span></span>
+        </button>
+        <ul id="navMenu">
+            <li><a href="#works" onclick="closeMenu()">Работы</a></li>
+            <li><a href="#prices" onclick="closeMenu()">Прайс</a></li>
+            <li><a href="#booking" onclick="closeMenu()">Запись</a></li>
+            <li><a href="#contacts" onclick="closeMenu()">Контакты</a></li>
+        </ul>
+    </nav>
+    <div class="hero-content">
+        <h1>Идеальный маникюр<br>для твоих рук</h1>
+        <p>Запишись онлайн за 30 секунд — выбирай удобное время</p>
+        <a href="#booking" class="btn-primary">Записаться</a>
+    </div>
+</header>
+
+<div class="container-alerts">
+    <div class="alert success" th:if="${success}" th:text="${success}"></div>
+    <div class="alert error" th:if="${error}" th:text="${error}"></div>
+</div>
+
+<section id="works" class="section">
+    <h2>Мои работы</h2>
+
+    <div class="gallery" th:if="${!works.isEmpty()}">
+        <div class="work-card" th:each="w : ${works}" th:attr="data-src=${w.imageUrl},data-title=${w.title}" onclick="openLightbox(this)">
+            <img th:src="${w.imageUrl}" th:alt="${w.title}" loading="lazy">
+            <div class="work-title" th:if="${w.title != null and !w.title.isEmpty()}" th:text="${w.title}"></div>
+        </div>
+    </div>
+
+    <div class="carousel" id="carousel" th:if="${!works.isEmpty()}">
+        <div class="work-card" th:each="w : ${works}" th:attr="data-src=${w.imageUrl},data-title=${w.title}" onclick="openLightbox(this)">
+            <img th:src="${w.imageUrl}" th:alt="${w.title}" loading="lazy">
+            <div class="work-title" th:if="${w.title != null and !w.title.isEmpty()}" th:text="${w.title}"></div>
+        </div>
+    </div>
+
+    <div class="carousel-dots" id="carouselDots" th:if="${!works.isEmpty()}"></div>
+
+    <p th:if="${#lists.isEmpty(works)}" class="empty">Работы скоро появятся ✨</p>
+</section>
+
+<section id="prices" class="section prices-section">
+    <h2>Прайс-лист</h2>
+    <div class="prices">
+        <div class="price-item" th:each="p : ${prices}">
+            <div class="price-row">
+                <span class="price-name" th:text="${p.name}"></span>
+                <span class="price-value" th:text="${p.price} + ' ₸'"></span>
+            </div>
+            <p th:if="${p.description != null and !p.description.isEmpty()}"
+               th:text="${p.description}" class="price-desc"></p>
+        </div>
+        <p th:if="${#lists.isEmpty(prices)}" class="empty">Прайс скоро появится</p>
+    </div>
+</section>
+
+<section id="booking" class="section booking-section">
+    <h2>Записаться на маникюр</h2>
+
+    <div class="slots-grid">
+        <div class="slot-card" th:each="s : ${slots}">
+            <div class="slot-date" th:text="${#temporals.format(s.dateTime, 'dd MMMM')}"></div>
+            <div class="slot-time" th:text="${#temporals.format(s.dateTime, 'HH:mm')}"></div>
+            <button class="btn-book"
+                    th:attr="data-slot-id=${s.id},data-slot-text=${#temporals.format(s.dateTime, 'dd MMMM HH:mm')}"
+                    onclick="openBooking(this)">Записаться</button>
+        </div>
+        <p th:if="${#lists.isEmpty(slots)}" class="empty">Свободных слотов пока нет. Загляните позже ✨</p>
+    </div>
+</section>
+
+<!-- КОНТАКТЫ -->
+<section id="contacts" class="section contacts-section">
+    <h2>Свяжитесь со мной</h2>
+    <div class="contacts-grid">
+        <a href="https://wa.me/77784014507?text=%D0%97%D0%B4%D1%80%D0%B0%D0%B2%D1%81%D1%82%D0%B2%D1%83%D0%B9%D1%82%D0%B5%21%20%D0%A5%D0%BE%D1%87%D1%83%20%D0%B7%D0%B0%D0%BF%D0%B8%D1%81%D0%B0%D1%82%D1%8C%D1%81%D1%8F%20%D0%BD%D0%B0%20%D0%BC%D0%B0%D0%BD%D0%B8%D0%BA%D1%8E%D1%80%20%F0%9F%92%85"
+           target="_blank" rel="noopener" class="contact-btn contact-whatsapp">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+            </svg>
+            <span>WhatsApp</span>
+        </a>
+
+        <a href="https://www.instagram.com/aliya_nailsss_/" target="_blank" rel="noopener" class="contact-btn contact-instagram">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+                <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069M12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0m0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324M12 16a4 4 0 110-8 4 4 0 010 8m6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881"/>
+            </svg>
+            <span>Instagram</span>
+        </a>
+
+        <a href="tel:+77784014507" class="contact-btn contact-phone">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+                <path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/>
+            </svg>
+            <span>Позвонить</span>
+        </a>
+    </div>
+    <p class="contacts-phone-text">+7 778 401 45 07</p>
+</section>
+
+<div id="bookingModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeBooking()">&times;</span>
+        <h3>Запись на <span id="slotText"></span></h3>
+        <form method="post" th:action="@{/book}">
+            <input type="hidden" name="slotId" id="slotIdInput">
+            <input type="text" name="name" placeholder="Ваше имя" required maxlength="100" autocomplete="name">
+            <input type="tel" name="phone" placeholder="Телефон" required maxlength="30" autocomplete="tel" inputmode="tel">
+            <select name="service">
+                <option value="">— Выберите услугу —</option>
+                <option th:each="p : ${prices}" th:value="${p.name}"
+                        th:text="${p.name} + ' — ' + ${p.price} + ' ₸'"></option>
+            </select>
+            <textarea name="comment" placeholder="Комментарий (по желанию)" maxlength="1000"></textarea>
+            <button type="submit" class="btn-primary">Подтвердить запись</button>
+        </form>
+    </div>
+</div>
+
+<!-- Плавающая WhatsApp кнопка -->
+<a href="https://wa.me/77784014507?text=%D0%97%D0%B4%D1%80%D0%B0%D0%B2%D1%81%D1%82%D0%B2%D1%83%D0%B9%D1%82%D0%B5%21%20%D0%A5%D0%BE%D1%87%D1%83%20%D0%B7%D0%B0%D0%BF%D0%B8%D1%81%D0%B0%D1%82%D1%8C%D1%81%D1%8F%20%D0%BD%D0%B0%20%D0%BC%D0%B0%D0%BD%D0%B8%D0%BA%D1%8E%D1%80%20%F0%9F%92%85"
+   target="_blank" rel="noopener" class="floating-whatsapp" aria-label="Написать в WhatsApp">
+    <svg viewBox="0 0 24 24" width="28" height="28" fill="white">
+        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+    </svg>
+</a>
+
+<div id="lightbox" class="lightbox" onclick="closeLightbox(event)">
+    <span class="lightbox-close">&times;</span>
+    <img id="lightboxImg" src="" alt="">
+</div>
+
+<footer>
+    <p>© 2025 Aliya Nails. Все права защищены.</p>
+</footer>
+
+<script>
+    const burger = document.getElementById('burger');
+    const navMenu = document.getElementById('navMenu');
+    burger.addEventListener('click', () => {
+        burger.classList.toggle('open');
+        navMenu.classList.toggle('open');
+    });
+    function closeMenu() {
+        burger.classList.remove('open');
+        navMenu.classList.remove('open');
+    }
+
+    function openBooking(btn) {
+        document.getElementById('slotIdInput').value = btn.dataset.slotId;
+        document.getElementById('slotText').innerText = btn.dataset.slotText;
+        document.getElementById('bookingModal').style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+    function closeBooking() {
+        document.getElementById('bookingModal').style.display = 'none';
+        document.body.style.overflow = '';
+    }
+    window.addEventListener('click', e => {
+        const m = document.getElementById('bookingModal');
+        if (e.target === m) closeBooking();
+    });
+
+    function openLightbox(card) {
+        const src = card.dataset.src;
+        document.getElementById('lightboxImg').src = src;
+        document.getElementById('lightbox').classList.add('open');
+        document.body.style.overflow = 'hidden';
+    }
+    function closeLightbox(e) {
+        const lb = document.getElementById('lightbox');
+        if (e.target === lb || e.target.classList.contains('lightbox-close')) {
+            lb.classList.remove('open');
+            document.body.style.overflow = '';
+        }
+    }
+
+    const carousel = document.getElementById('carousel');
+    const dotsWrap = document.getElementById('carouselDots');
+    if (carousel && dotsWrap) {
+        const cards = carousel.querySelectorAll('.work-card');
+        cards.forEach((_, i) => {
+            const dot = document.createElement('span');
+            dot.className = 'dot' + (i === 0 ? ' active' : '');
+            dot.addEventListener('click', () => {
+                cards[i].scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+            });
+            dotsWrap.appendChild(dot);
+        });
+        const dots = dotsWrap.querySelectorAll('.dot');
+        carousel.addEventListener('scroll', () => {
+            const cardWidth = cards[0].offsetWidth + 12;
+            const index = Math.round(carousel.scrollLeft / cardWidth);
+            dots.forEach((d, i) => d.classList.toggle('active', i === index));
+        }, { passive: true });
+    }
+</script>
+<script>
+    // Регистрация Service Worker для PWA
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/sw.js')
+                .then(reg => console.log('SW зарегистрирован'))
+                .catch(err => console.log('SW ошибка:', err));
+        });
+    }
+</script>
+</body>
+</body>
+</html>

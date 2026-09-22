@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#F8D7E1">
+    <title>Админ-панель — Aliya Nails</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+
+    <!-- PWA -->
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Aliya Nails">
+    <link rel="icon" type="image/png" href="/icons/icon-192.png">
+</head>
+<body class="admin-body">
+
+<div class="admin-header">
+    <h1>Панель управления</h1>
+    <form th:action="@{/logout}" method="post" style="display:inline">
+        <button class="btn-logout">Выйти</button>
+    </form>
+</div>
+
+<div class="container-alerts">
+    <div class="alert success" th:if="${msg}" th:text="${msg}"></div>
+    <div class="alert error" th:if="${err}" th:text="${err}"></div>
+</div>
+
+<div class="admin-grid">
+
+    <!-- ЗАПИСИ КЛИЕНТОВ -->
+    <div class="admin-card admin-card-wide">
+        <h2>📋 Записи клиентов</h2>
+
+        <!-- Таблица для ПК -->
+        <table class="admin-table" th:if="${!bookings.isEmpty()}">
+            <thead>
+            <tr>
+                <th>Клиент</th>
+                <th>Телефон</th>
+                <th>Услуга</th>
+                <th>Время</th>
+                <th>Комментарий</th>
+                <th></th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="b : ${bookings.content}">
+                <td th:text="${b.clientName}"></td>
+                <td><a th:href="'tel:' + ${b.phone}" th:text="${b.phone}"></a></td>
+                <td th:text="${b.service} ?: '—'"></td>
+                <td th:text="${#temporals.format(b.slot.dateTime, 'dd.MM.yyyy HH:mm')}"></td>
+                <td th:text="${b.comment} ?: ''"></td>
+                <td>
+                    <form th:action="@{'/admin/booking/cancel/' + ${b.id}}" method="post"
+                          onsubmit="return confirm('Отменить запись?')">
+                        <button class="btn-del">Отменить</button>
+                    </form>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+
+        <!-- Карточки для мобильного -->
+        <div class="booking-cards" th:if="${!bookings.isEmpty()}">
+            <div class="booking-card" th:each="b : ${bookings.content}">
+                <div class="booking-card-time"
+                     th:text="${#temporals.format(b.slot.dateTime, 'dd.MM.yyyy • HH:mm')}"></div>
+                <div class="booking-card-row">
+                    <strong>Клиент</strong>
+                    <span th:text="${b.clientName}"></span>
+                </div>
+                <div class="booking-card-row">
+                    <strong>Телефон</strong>
+                    <a th:href="'tel:' + ${b.phone}" th:text="${b.phone}"></a>
+                </div>
+                <div class="booking-card-row" th:if="${b.service != null and !b.service.isEmpty()}">
+                    <strong>Услуга</strong>
+                    <span th:text="${b.service}"></span>
+                </div>
+                <div class="booking-card-row" th:if="${b.comment != null and !b.comment.isEmpty()}">
+                    <strong>Комментарий</strong>
+                    <span th:text="${b.comment}"></span>
+                </div>
+                <form th:action="@{'/admin/booking/cancel/' + ${b.id}}" method="post"
+                      onsubmit="return confirm('Отменить запись?')">
+                    <button class="btn-del">Отменить запись</button>
+                </form>
+            </div>
+        </div>
+
+        <p th:if="${bookings.isEmpty()}" class="empty-li">Пока записей нет</p>
+    </div>
+
+    <!-- СЛОТЫ -->
+    <div class="admin-card">
+        <h2>📅 Свободное время</h2>
+        <form th:action="@{/admin/slot/add}" method="post" class="inline-form">
+            <input type="date" name="date" required>
+            <input type="time" name="time" required>
+            <button type="submit">+ Добавить слот</button>
+        </form>
+        <ul class="list">
+            <li th:each="s : ${slots}">
+                <span th:text="${#temporals.format(s.dateTime, 'dd.MM.yyyy HH:mm')}"></span>
+                <span th:if="${s.booked}" class="tag booked">занято</span>
+                <span th:unless="${s.booked}" class="tag free">свободно</span>
+                <form th:if="${!s.booked}"
+                      th:action="@{'/admin/slot/delete/' + ${s.id}}" method="post" style="display:inline">
+                    <button class="btn-del">×</button>
+                </form>
+            </li>
+            <li th:if="${#lists.isEmpty(slots)}" class="empty-li">Слотов пока нет</li>
+        </ul>
+    </div>
+
+
+    <!-- ПОРТФОЛИО -->
+    <div class="admin-card">
+        <h2>📸 Портфолио</h2>
+        <form th:action="@{/admin/work/add}" method="post" enctype="multipart/form-data" class="inline-form">
+            <input type="file" name="file" accept="image/*" required>
+            <input type="text" name="title" placeholder="Название (необязательно)" maxlength="100">
+            <button type="submit">+ Загрузить фото</button>
+        </form>
+        <div class="admin-gallery">
+            <div class="admin-work" th:each="w : ${works}">
+                <img th:src="${w.imageUrl}" th:alt="${w.title}">
+                <form th:action="@{'/admin/work/delete/' + ${w.id}}" method="post"
+                      onsubmit="return confirm('Удалить фото?')">
+                    <button class="btn-del">Удалить</button>
+                </form>
+            </div>
+        </div>
+        <p th:if="${#lists.isEmpty(works)}" class="empty-li">Пока нет работ</p>
+    </div>
+
+    <!-- ПРАЙС -->
+    <div class="admin-card">
+        <h2>💰 Прайс-лист</h2>
+        <form th:action="@{/admin/price/add}" method="post" class="inline-form">
+            <input type="text" name="name" placeholder="Услуга" required maxlength="100">
+            <input type="number" name="price" placeholder="Цена ₸" required min="0">
+            <input type="text" name="description" placeholder="Описание (необязательно)" maxlength="500">
+            <button type="submit">+ Добавить услугу</button>
+        </form>
+        <ul class="list">
+            <li th:each="p : ${prices}">
+                <span th:text="${p.name} + ' — ' + ${p.price} + ' ₸'"></span>
+                <form th:action="@{'/admin/price/delete/' + ${p.id}}" method="post" style="display:inline">
+                    <button class="btn-del">×</button>
+                </form>
+            </li>
+            <li th:if="${#lists.isEmpty(prices)}" class="empty-li">Прайс пуст</li>
+        </ul>
+    </div>
+
+</div>
+</body>
+</html>
