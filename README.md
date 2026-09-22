@@ -1,94 +1,53 @@
 # Booking System
 
-Online booking system for a nail studio and beauty services.
+A full-stack appointment booking system for a beauty studio.
 
-The project allows clients to view available services, choose a specialist, select a convenient date and time, and create a booking. Administrators can manage services, specialists, schedules, and bookings.
+The application lets clients view the studio portfolio and price list, choose an available time slot, and submit an appointment request. Administrators can manage time slots, portfolio images, prices, and bookings from a protected admin panel.
 
-## About the Project
-
-This project is a full-stack booking system designed for a real nail studio workflow.
-
-The main goal is to replace manual appointment management through Instagram messages, phone calls, or messengers with a centralized web application.
-
-### Main Features
-
-* User registration and authentication
-* Role-based access
-* Service management
-* Specialist management
-* Working schedule management
-* Available time slot calculation
-* Appointment booking
-* Appointment cancellation
-* Booking status management
-* Admin panel
-* PostgreSQL database
-* Form validation
-* Spring Security
-* Server-side rendering with Thymeleaf
-
-## User Roles
+## Features
 
 ### Client
-
-A client can:
-
-* Register an account
-* Log in
-* View available services
-* View specialists
-* Select a service
-* Select a date and time
-* Create an appointment
-* View personal appointments
-* Cancel an appointment
+- View portfolio and services
+- View available appointment slots
+- Book an available time slot
+- Provide name, phone, selected service and comment
+- Receive a booking confirmation message
+- Contact the studio through WhatsApp, Instagram or phone
 
 ### Administrator
+- Secure admin login with Spring Security
+- Add and remove available time slots
+- View bookings with pagination
+- Cancel bookings and release the slot
+- Manage portfolio images
+- Manage the price list
+- Receive Telegram notifications for new and cancelled bookings
 
-An administrator can:
+## Booking Flow
 
-* Manage users
-* Create, update and delete services
-* Manage specialists
-* Configure working schedules
-* View all appointments
-* Change appointment statuses
-* Manage the booking system
+```text
+Client
+  ↓
+Select available slot
+  ↓
+Enter contact details
+  ↓
+Server locks the slot
+  ↓
+Check that the slot is still free
+  ↓
+Create booking
+  ↓
+Mark slot as booked
+  ↓
+Send Telegram notification
+```
 
-## Tech Stack
-
-### Backend
-
-* Java 17
-* Spring Boot
-* Spring MVC
-* Spring Data JPA
-* Spring Security
-* Hibernate
-* Maven
-* Lombok
-
-### Frontend
-
-* Thymeleaf
-* HTML5
-* CSS3
-* JavaScript
-
-### Database
-
-* PostgreSQL
-
-### Tools
-
-* IntelliJ IDEA
-* Git
-* GitHub
-* Postman
+The booking operation uses a database pessimistic lock and a unique database constraint on the booking slot to reduce the risk of double booking.
 
 ## Architecture
 
-The application follows a layered architecture:
+The current application uses a classic Spring layered architecture:
 
 ```text
 Controller
@@ -97,244 +56,176 @@ Service
     ↓
 Repository
     ↓
-Database
+PostgreSQL
 ```
 
-Main project structure:
+Main packages:
 
 ```text
-src/main/java/com/booking
-│
+com.nailstudio
+├── config
 ├── controller
-├── service
+├── model
 ├── repository
-├── entity
-├── dto
-├── mapper
-├── security
-├── exception
-└── config
+└── service
 ```
 
-## Booking Flow
+The project is intentionally being evolved incrementally toward a more production-oriented architecture with DTOs, validation, domain-specific exceptions, stronger testing and a REST API.
 
-The main booking process:
+## Tech Stack
+
+### Backend
+- Java 17
+- Spring Boot
+- Spring MVC
+- Spring Data JPA
+- Spring Security
+- Hibernate
+- Maven
+- Lombok
+
+### Frontend
+- Thymeleaf
+- HTML5
+- CSS3
+- JavaScript
+- Responsive UI
+- PWA support
+
+### Database
+- PostgreSQL
+
+### Integrations
+- Telegram Bot API
+
+## Project Structure
 
 ```text
-Client
-   ↓
-Select service
-   ↓
-Select specialist
-   ↓
-Select date
-   ↓
-System checks availability
-   ↓
-Select available time
-   ↓
-Create booking
-   ↓
-Booking confirmed
+src/
+├── main/
+│   ├── java/com/nailstudio/
+│   │   ├── config/
+│   │   ├── controller/
+│   │   ├── model/
+│   │   ├── repository/
+│   │   └── service/
+│   └── resources/
+│       ├── static/
+│       ├── templates/
+│       └── application.properties
+└── test/
 ```
 
-The system must prevent double booking of the same specialist for the same time slot.
+## Configuration
 
-## Booking Statuses
+Do not commit passwords, bot tokens or other secrets.
 
-A booking can have different statuses:
+Copy the example configuration and provide your own values through environment variables:
 
 ```text
-PENDING
-CONFIRMED
-COMPLETED
-CANCELLED
+src/main/resources/application.properties.example
 ```
 
-Example lifecycle:
+Required environment variables for a local setup:
 
 ```text
-PENDING → CONFIRMED → COMPLETED
-
-PENDING → CANCELLED
-CONFIRMED → CANCELLED
+DB_URL
+DB_USERNAME
+DB_PASSWORD
+ADMIN_USERS
 ```
 
-## Database
-
-The application uses PostgreSQL as the primary database.
-
-The main entities are planned around:
+Optional Telegram configuration:
 
 ```text
-User
-Service
-Specialist
-Schedule
-Booking
+TELEGRAM_BOT_TOKEN
+TELEGRAM_ADMIN_CHAT_IDS
 ```
 
-Relationships:
+Example:
 
-```text
-User
-  │
-  └── Booking
-
-Specialist
-  │
-  ├── Schedule
-  └── Booking
-
-Service
-  │
-  └── Booking
+```properties
+DB_URL=jdbc:postgresql://localhost:5432/nailstudio
+DB_USERNAME=postgres
+DB_PASSWORD=your_password
+ADMIN_USERS=admin:strong_password
+TELEGRAM_BOT_TOKEN=your_bot_token
+TELEGRAM_ADMIN_CHAT_IDS=your_chat_id
 ```
 
-## Security
+For security, the Telegram bot token previously stored in the repository must be revoked and replaced before using the application in production.
 
-Spring Security is used for authentication and authorization.
-
-The application provides different access levels for:
-
-```text
-CLIENT
-ADMIN
-```
-
-Protected resources are available only to authenticated users, while administrative operations are restricted to administrators.
-
-## Validation
-
-The application validates user input before processing requests.
-
-Examples:
-
-* Required fields
-* Valid email format
-* Valid phone number
-* Valid booking date
-* Valid booking time
-* Correct service selection
-* Correct specialist selection
-
-## Error Handling
-
-The application uses centralized exception handling for common errors.
-
-Examples:
-
-```text
-UserNotFoundException
-BookingNotFoundException
-ServiceNotFoundException
-SpecialistNotFoundException
-TimeSlotUnavailableException
-```
-
-The goal is to return clear and predictable responses when an operation cannot be completed.
-
-## Running the Project
+## Running Locally
 
 ### Requirements
 
-Make sure you have installed:
-
-* Java 17+
-* Maven
-* PostgreSQL
-* Git
-
-### Clone the repository
-
-```bash
-git clone https://github.com/devtilek/booking-system.git
-```
-
-```bash
-cd booking-system
-```
+- Java 17+
+- PostgreSQL
+- Maven
 
 ### Database
 
 Create a PostgreSQL database:
 
 ```sql
-CREATE DATABASE booking_system;
+CREATE DATABASE nailstudio;
 ```
 
-Configure the database connection in:
+Set the required environment variables and start the application:
 
-```text
-src/main/resources/application.properties
-```
-
-Example:
-
-```properties
-spring.datasource.url=jdbc:postgresql://localhost:5432/booking_system
-spring.datasource.username=postgres
-spring.datasource.password=your_password
-
-spring.jpa.hibernate.ddl-auto=update
-spring.jpa.show-sql=true
-```
-
-### Run the application
-
-Using Maven:
+Linux/macOS:
 
 ```bash
 ./mvnw spring-boot:run
 ```
 
-On Windows:
+Windows:
 
 ```bash
 mvnw.cmd spring-boot:run
 ```
 
-The application will start on:
+The application starts on:
 
 ```text
 http://localhost:8080
 ```
 
-## Future Improvements
+Admin panel:
 
-Planned improvements include:
+```text
+http://localhost:8080/login
+```
 
-* REST API
-* Swagger / OpenAPI documentation
-* Online payment integration
-* Email notifications
-* Telegram notifications
-* Calendar integration
-* Image upload for services and specialists
-* Advanced admin dashboard
-* Booking history
-* Statistics and analytics
-* Docker support
-* Unit and integration tests
-* CI/CD with GitHub Actions
+## Security Notes
 
-## Project Goals
+- Admin routes are protected by Spring Security.
+- Admin passwords are encoded with BCrypt.
+- Database credentials are read from environment variables.
+- Telegram credentials are read from environment variables.
+- Booking slots are locked during the booking transaction.
+- Production deployments should use HTTPS and a managed secret store.
 
-This project is created as a real-world portfolio project to demonstrate practical backend development skills.
+## Roadmap
 
-The project focuses on:
+The next development stages are planned around real backend engineering practices:
 
-* Spring Boot development
-* Database design
-* Authentication and authorization
-* REST principles
-* Business logic
-* Clean architecture
-* Exception handling
-* Validation
-* Git/GitHub workflow
-* Testing
-* Production-oriented development
+- DTOs and request/response models
+- Bean Validation
+- Domain-specific exceptions
+- Centralized error handling
+- Cleaner service boundaries
+- Booking status lifecycle
+- Customer accounts and booking history
+- Specialist management
+- Working schedules and automatic availability calculation
+- REST API
+- OpenAPI / Swagger
+- Unit and integration tests
+- Docker / Docker Compose
+- CI/CD with GitHub Actions
+- Database migrations with Flyway
+- Production deployment
 
 ## Author
 
@@ -342,4 +233,4 @@ The project focuses on:
 
 Java Backend Developer
 
-GitHub: `https://github.com/devtilek`
+GitHub: https://github.com/devtilek
