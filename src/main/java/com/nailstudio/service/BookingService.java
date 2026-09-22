@@ -1,5 +1,9 @@
 package com.nailstudio.service;
 
+import com.nailstudio.dto.BookingRequest;
+import com.nailstudio.exception.BookingNotFoundException;
+import com.nailstudio.exception.InvalidBookingStateException;
+import com.nailstudio.exception.SlotNotFoundException;
 import com.nailstudio.model.*;
 import com.nailstudio.repository.*;
 import org.springframework.data.domain.Page;
@@ -73,29 +77,29 @@ public class BookingService {
 
     // ==== BOOKINGS ====
     @Transactional
-    public Booking book(Long slotId, String name, String phone, String service, String comment) {
-        validateClientData(name, phone, comment);
+    public Booking book(Long slotId, BookingRequest request) {
+        validateClientData(request);
 
         TimeSlot slot = slotRepo.findByIdForUpdate(slotId)
                 .orElseThrow(() -> new IllegalArgumentException("Слот не найден"));
 
         if (!slot.getDateTime().isAfter(LocalDateTime.now())) {
-            throw new IllegalStateException("Нельзя записаться на прошедшее время");
+            throw new InvalidBookingStateException("Нельзя записаться на прошедшее время");
         }
 
         if (slot.isBooked()) {
-            throw new IllegalStateException("Это время уже занято");
+            throw new InvalidBookingStateException("Это время уже занято");
         }
 
-        String normalizedService = normalizeService(service);
+        String normalizedService = normalizeService(request.service());
 
         slot.setBooked(true);
 
         Booking booking = new Booking();
-        booking.setClientName(name.trim());
-        booking.setPhone(phone.trim());
+        booking.setClientName(request.name().trim());
+        booking.setPhone(request.phone().trim());
         booking.setService(normalizedService);
-        booking.setComment(normalizeComment(comment));
+        booking.setComment(normalizeComment(request.comment()));
         booking.setSlot(slot);
 
         Booking saved = bookingRepo.save(booking);
@@ -104,21 +108,9 @@ public class BookingService {
         return saved;
     }
 
-    private void validateClientData(String name, String phone, String comment) {
-        if (name == null || name.isBlank()) {
-            throw new IllegalArgumentException("Укажите имя");
-        }
-        if (phone == null || phone.isBlank()) {
-            throw new IllegalArgumentException("Укажите телефон");
-        }
-        if (name.trim().length() > 100) {
-            throw new IllegalArgumentException("Имя слишком длинное");
-        }
-        if (phone.trim().length() > 30) {
-            throw new IllegalArgumentException("Телефон слишком длинный");
-        }
-        if (comment != null && comment.length() > 1000) {
-            throw new IllegalArgumentException("Комментарий слишком длинный");
+    private void validateClientData(BookingRequest request) {
+        if (request == null) {
+            throw new IllegalArgumentException("Данные записи обязательны");
         }
     }
 
@@ -158,7 +150,7 @@ public class BookingService {
         requireStatus(booking, BookingStatus.PENDING, "подтвердить");
 
         if (!booking.getSlot().getDateTime().isAfter(LocalDateTime.now())) {
-            throw new IllegalStateException("Нельзя подтвердить запись на прошедшее время");
+            throw new InvalidBookingStateException("Нельзя подтвердить запись на прошедшее время");
         }
 
         booking.setStatus(BookingStatus.CONFIRMED);
@@ -177,11 +169,11 @@ public class BookingService {
         Booking booking = getBookingForUpdate(bookingId);
 
         if (booking.getStatus() == BookingStatus.CANCELLED) {
-            throw new IllegalStateException("Запись уже отменена");
+            throw new InvalidBookingStateException("Запись уже отменена");
         }
 
         if (booking.getStatus() == BookingStatus.COMPLETED) {
-            throw new IllegalStateException("Нельзя отменить завершённую запись");
+            throw new InvalidBookingStateException("Нельзя отменить завершённую запись");
         }
 
         TimeSlot slot = booking.getSlot();
@@ -198,7 +190,7 @@ public class BookingService {
 
     private void requireStatus(Booking booking, BookingStatus expected, String action) {
         if (booking.getStatus() != expected) {
-            throw new IllegalStateException(
+            throw new InvalidBookingStateException(
                     "Нельзя " + action + " запись со статусом " + booking.getStatus()
             );
         }
