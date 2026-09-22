@@ -66,6 +66,28 @@ public class AdminController {
     }
 
     // ==== BOOKINGS ====
+    @PostMapping("/booking/confirm/{id}")
+    public String confirmBooking(@PathVariable Long id, RedirectAttributes ra) {
+        try {
+            service.confirmBooking(id);
+            ra.addFlashAttribute("msg", "Запись подтверждена");
+        } catch (Exception e) {
+            ra.addFlashAttribute("err", e.getMessage());
+        }
+        return "redirect:/admin";
+    }
+
+    @PostMapping("/booking/complete/{id}")
+    public String completeBooking(@PathVariable Long id, RedirectAttributes ra) {
+        try {
+            service.completeBooking(id);
+            ra.addFlashAttribute("msg", "Запись завершена");
+        } catch (Exception e) {
+            ra.addFlashAttribute("err", e.getMessage());
+        }
+        return "redirect:/admin";
+    }
+
     @PostMapping("/booking/cancel/{id}")
     public String cancelBooking(@PathVariable Long id, RedirectAttributes ra) {
         try {

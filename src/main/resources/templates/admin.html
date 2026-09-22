@@ -43,6 +43,7 @@
                 <th>Телефон</th>
                 <th>Услуга</th>
                 <th>Время</th>
+                <th>Статус</th>
                 <th>Комментарий</th>
                 <th></th>
             </tr>
@@ -53,12 +54,30 @@
                 <td><a th:href="'tel:' + ${b.phone}" th:text="${b.phone}"></a></td>
                 <td th:text="${b.service} ?: '—'"></td>
                 <td th:text="${#temporals.format(b.slot.dateTime, 'dd.MM.yyyy HH:mm')}"></td>
+                <td>
+                    <span class="tag"
+                          th:classappend="${b.status.name() == 'PENDING'} ? ' free' :
+                                          (${b.status.name() == 'CONFIRMED'} ? ' booked' :
+                                          (${b.status.name() == 'COMPLETED'} ? ' completed' : ' cancelled'))"
+                          th:text="${b.status.name()}"></span>
+                </td>
                 <td th:text="${b.comment} ?: ''"></td>
                 <td>
-                    <form th:action="@{'/admin/booking/cancel/' + ${b.id}}" method="post"
-                          onsubmit="return confirm('Отменить запись?')">
-                        <button class="btn-del">Отменить</button>
-                    </form>
+                    <div class="booking-actions">
+                        <form th:if="${b.status.name() == 'PENDING'}"
+                              th:action="@{'/admin/booking/confirm/' + ${b.id}}" method="post">
+                            <button class="btn-action" type="submit">Подтвердить</button>
+                        </form>
+                        <form th:if="${b.status.name() == 'CONFIRMED'}"
+                              th:action="@{'/admin/booking/complete/' + ${b.id}}" method="post">
+                            <button class="btn-action" type="submit">Завершить</button>
+                        </form>
+                        <form th:if="${b.status.name() == 'PENDING' or b.status.name() == 'CONFIRMED'}"
+                              th:action="@{'/admin/booking/cancel/' + ${b.id}}" method="post"
+                              onsubmit="return confirm('Отменить запись?')">
+                            <button class="btn-del" type="submit">Отменить</button>
+                        </form>
+                    </div>
                 </td>
             </tr>
             </tbody>
@@ -85,10 +104,29 @@
                     <strong>Комментарий</strong>
                     <span th:text="${b.comment}"></span>
                 </div>
-                <form th:action="@{'/admin/booking/cancel/' + ${b.id}}" method="post"
-                      onsubmit="return confirm('Отменить запись?')">
-                    <button class="btn-del">Отменить запись</button>
-                </form>
+                <div class="booking-card-row">
+                    <strong>Статус</strong>
+                    <span class="tag"
+                          th:classappend="${b.status.name() == 'PENDING'} ? ' free' :
+                                          (${b.status.name() == 'CONFIRMED'} ? ' booked' :
+                                          (${b.status.name() == 'COMPLETED'} ? ' completed' : ' cancelled'))"
+                          th:text="${b.status.name()}"></span>
+                </div>
+                <div class="booking-actions">
+                    <form th:if="${b.status.name() == 'PENDING'}"
+                          th:action="@{'/admin/booking/confirm/' + ${b.id}}" method="post">
+                        <button class="btn-action" type="submit">Подтвердить</button>
+                    </form>
+                    <form th:if="${b.status.name() == 'CONFIRMED'}"
+                          th:action="@{'/admin/booking/complete/' + ${b.id}}" method="post">
+                        <button class="btn-action" type="submit">Завершить</button>
+                    </form>
+                    <form th:if="${b.status.name() == 'PENDING' or b.status.name() == 'CONFIRMED'}"
+                          th:action="@{'/admin/booking/cancel/' + ${b.id}}" method="post"
+                          onsubmit="return confirm('Отменить запись?')">
+                        <button class="btn-del" type="submit">Отменить запись</button>
+                    </form>
+                </div>
             </div>
         </div>
 

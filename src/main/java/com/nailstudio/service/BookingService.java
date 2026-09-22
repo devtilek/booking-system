@@ -152,15 +152,56 @@ public class BookingService {
     }
 
     @Transactional
+    public void confirmBooking(Long bookingId) {
+        Booking booking = getBookingForUpdate(bookingId);
+
+        requireStatus(booking, BookingStatus.PENDING, "подтвердить");
+
+        if (!booking.getSlot().getDateTime().isAfter(LocalDateTime.now())) {
+            throw new IllegalStateException("Нельзя подтвердить запись на прошедшее время");
+        }
+
+        booking.setStatus(BookingStatus.CONFIRMED);
+    }
+
+    @Transactional
+    public void completeBooking(Long bookingId) {
+        Booking booking = getBookingForUpdate(bookingId);
+
+        requireStatus(booking, BookingStatus.CONFIRMED, "завершить");
+        booking.setStatus(BookingStatus.COMPLETED);
+    }
+
+    @Transactional
     public void cancelBooking(Long bookingId) {
-        Booking booking = bookingRepo.findById(bookingId)
-                .orElseThrow(() -> new IllegalArgumentException("Запись не найдена"));
+        Booking booking = getBookingForUpdate(bookingId);
+
+        if (booking.getStatus() == BookingStatus.CANCELLED) {
+            throw new IllegalStateException("Запись уже отменена");
+        }
+
+        if (booking.getStatus() == BookingStatus.COMPLETED) {
+            throw new IllegalStateException("Нельзя отменить завершённую запись");
+        }
 
         TimeSlot slot = booking.getSlot();
         slot.setBooked(false);
+        booking.setStatus(BookingStatus.CANCELLED);
 
-        bookingRepo.delete(booking);
         telegram.notifyBookingCancelled(booking);
+    }
+
+    private Booking getBookingForUpdate(Long bookingId) {
+        return bookingRepo.findByIdForUpdate(bookingId)
+                .orElseThrow(() -> new IllegalArgumentException("Запись не найдена"));
+    }
+
+    private void requireStatus(Booking booking, BookingStatus expected, String action) {
+        if (booking.getStatus() != expected) {
+            throw new IllegalStateException(
+                    "Нельзя " + action + " запись со статусом " + booking.getStatus()
+            );
+        }
     }
 
     // ==== WORKS ====
