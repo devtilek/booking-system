@@ -17,6 +17,8 @@ public interface TimeSlotRepository extends JpaRepository<TimeSlot, Long> {
 
     List<TimeSlot> findAllByOrderByDateTimeAsc();
 
+    boolean existsByDateTime(LocalDateTime dateTime);
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select s from TimeSlot s where s.id = :id")
     Optional<TimeSlot> findByIdForUpdate(@Param("id") Long id);

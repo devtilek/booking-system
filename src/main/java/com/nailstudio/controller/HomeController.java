@@ -1,9 +1,11 @@
 package com.nailstudio.controller;
 
+import com.nailstudio.dto.BookingRequest;
 import com.nailstudio.service.BookingService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
@@ -25,15 +27,12 @@ public class HomeController {
 
     @PostMapping("/book")
     public String book(@RequestParam Long slotId,
-                       @RequestParam String name,
-                       @RequestParam String phone,
-                       @RequestParam(name = "service", required = false) String selectedService,
-                       @RequestParam(required = false) String comment,
+                       @Valid BookingRequest request,
                        RedirectAttributes ra) {
         try {
-            service.book(slotId, name, phone, selectedService, comment);
+            service.book(slotId, request);
             ra.addFlashAttribute("success", "Вы успешно записаны! Мы свяжемся с вами для подтверждения.");
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             ra.addFlashAttribute("error", e.getMessage());
         }
         return "redirect:/";
