@@ -30,7 +30,7 @@ public class Booking {
     @Column(nullable = false, length = 20)
     private BookingStatus status = BookingStatus.PENDING;
 
-    @OneToOne(fetch = FetchType.LAZY, optional = false)
+    @OneToOne(fetch = FetchType.EAGER, optional = false)
     @JoinColumn(name = "slot_id", nullable = false, unique = true)
     private TimeSlot slot;
 
