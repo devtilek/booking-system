@@ -8,12 +8,13 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.nio.file.*;
+import java.io.ByteArrayOutputStream;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -27,6 +28,15 @@ public class AdminController {
 
     @Value("${upload.dir}")
     private String uploadDir;
+
+    @Value("${supabase.url}")
+    private String supabaseUrl;
+
+    @Value("${supabase.key}")
+    private String supabaseKey;
+
+    @Value("${supabase.bucket}")
+    private String supabaseBucket;
 
     public AdminController(BookingService service) {
         this.service = service;
@@ -99,9 +109,8 @@ public class AdminController {
         return "redirect:/admin";
     }
 
-    // ==== WORKS ====
     @PostMapping("/work/add")
-    public String addWork(@RequestParam String title,
+    public String addWork(@RequestParam(required = false) String title,
                           @RequestParam MultipartFile file,
                           RedirectAttributes ra) {
         try {
@@ -111,22 +120,50 @@ public class AdminController {
                 throw new RuntimeException("Можно загрузить только изображение");
             }
 
-            Path dir = Paths.get(uploadDir).toAbsolutePath();
-            Files.createDirectories(dir);
-            String fname = UUID.randomUUID() + ".jpg";
-            Path target = dir.resolve(fname);
-
+            // Сжимаем до 1200px
             BufferedImage src = ImageIO.read(file.getInputStream());
             if (src == null) throw new RuntimeException("Не удалось прочитать изображение");
-
-            // Сжимаем до 1200px по большей стороне
             BufferedImage out = resize(src, 1200);
-            ImageIO.write(out, "jpg", target.toFile());
+
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            ImageIO.write(out, "jpg", baos);
+            byte[] imageBytes = baos.toByteArray();
+
+            String fname = UUID.randomUUID() + ".jpg";
+            String uploadUrl = supabaseUrl + "/storage/v1/object/"
+                    + supabaseBucket + "/" + fname;
+
+            WebClient webClient = WebClient.builder()
+                    .defaultHeader("Authorization", "Bearer " + supabaseKey)
+                    .defaultHeader("apikey", supabaseKey)   // ← ДОБАВИТЬ ЭТО
+                    .build();
+
+            webClient.post()
+                    .uri(uploadUrl)
+                    .contentType(org.springframework.http.MediaType.IMAGE_JPEG)
+                    .header("x-upsert", "true")
+                    .bodyValue(imageBytes)
+                    .exchangeToMono(response -> {
+                        if (response.statusCode().is2xxSuccessful()) {
+                            return response.bodyToMono(String.class);
+                        } else {
+                            return response.bodyToMono(String.class)
+                                    .flatMap(body -> reactor.core.publisher.Mono.error(
+                                            new RuntimeException("Supabase "
+                                                    + response.statusCode()
+                                                    + ": " + body)));
+                        }
+                    })
+                    .block();
+
+            String publicUrl = supabaseUrl + "/storage/v1/object/public/"
+                    + supabaseBucket + "/" + fname;
 
             Work w = new Work();
-            w.setTitle(title);
-            w.setImageUrl("/uploads/" + fname);
+            w.setTitle(title == null || title.isBlank() ? "" : title);
+            w.setImageUrl(publicUrl);
             service.addWork(w);
+
             ra.addFlashAttribute("msg", "Фото загружено");
         } catch (Exception e) {
             ra.addFlashAttribute("err", "Ошибка загрузки: " + e.getMessage());
@@ -140,7 +177,6 @@ public class AdminController {
         return "redirect:/admin";
     }
 
-    // ==== PRICES ====
     @PostMapping("/price/add")
     public String addPrice(@RequestParam String name,
                            @RequestParam Integer price,
@@ -159,12 +195,10 @@ public class AdminController {
         return "redirect:/admin";
     }
 
-    // ==== UTIL ====
     private BufferedImage resize(BufferedImage src, int maxSize) {
         int w = src.getWidth();
         int h = src.getHeight();
         if (w <= maxSize && h <= maxSize) {
-            // всё равно конвертируем в RGB (для JPEG)
             BufferedImage rgb = new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB);
             Graphics2D g = rgb.createGraphics();
             g.drawImage(src, 0, 0, null);
